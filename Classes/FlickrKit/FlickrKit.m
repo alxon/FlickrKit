@@ -337,16 +337,16 @@
 	NSString *storedToken = [[NSUserDefaults standardUserDefaults] stringForKey:kFKStoredTokenKey];
 	NSString *storedSecret = [[NSUserDefaults standardUserDefaults] stringForKey:kFKStoredTokenSecret];
 	NSNumber *storedPermission = [[NSUserDefaults standardUserDefaults] objectForKey:kFKStoredTokenPermission];
-+	switch (storedPermission.integerValue) {
-+		case FKPermissionRead:
-+		case FKPermissionWrite:
-+		case FKPermissionDelete:
-+			break;
-+		default:
-+			storedPermission = nil;
-+			break;
-+	}
-	if(storedToken && storedSecret && storedPermission)) {
+	switch (storedPermission.integerValue) {
+		case FKPermissionRead:
+		case FKPermissionWrite:
+		case FKPermissionDelete:
+			break;
+		default:
+			storedPermission = nil;
+			break;
+	}
+	if(storedToken && storedSecret && storedPermission) {
 		
 		NSDictionary *args = @{@"oauth_token": storedToken};
 		
