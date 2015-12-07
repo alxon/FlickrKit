@@ -188,7 +188,8 @@
 		
 		if (!success) {
 			NSString *errorString = @"Cannot parse response data from image upload";
-			NSDictionary *userInfo = @{NSLocalizedDescriptionKey: errorString};
+			NSString *dataString = [[NSString alloc] initWithData:self.data encoding:NSUTF8StringEncoding];
+			NSDictionary *userInfo = @{NSLocalizedDescriptionKey: errorString, @"Response": dataString};
 			NSError *error = [NSError errorWithDomain:FKFlickrKitErrorDomain code:FKErrorResponseParsing userInfo:userInfo];
 			if (self.completion) {
 				self.completion(nil, error);
