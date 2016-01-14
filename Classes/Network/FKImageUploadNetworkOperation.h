@@ -18,6 +18,8 @@
 - (id) initWithAssetURL:(NSURL *)assetURL arguments:(NSDictionary *)args completion:(FKAPIImageUploadCompletion)completion;
 #endif
 
+- (id) initWithFileURL:(NSURL *)fileURL arguments:(NSDictionary *)args completion:(FKAPIImageUploadCompletion)completion;
+
 @end
 
 @interface FKImageUploadNetworkOperation (ImageSerialization)

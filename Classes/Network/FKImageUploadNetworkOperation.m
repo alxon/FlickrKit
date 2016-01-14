@@ -12,6 +12,7 @@
 #import "FKUtilities.h"
 #import "FKUploadRespone.h"
 #import "FKDUStreamUtil.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 
 @interface FKImageUploadNetworkOperation ()
 
@@ -24,6 +25,7 @@
 #if TARGET_OS_IOS
 @property (nonatomic, assign) NSURL* assetURL;
 #endif
+@property (nonatomic, strong) NSURL *fileURL;
 @end
 
 @implementation FKImageUploadNetworkOperation
@@ -50,6 +52,18 @@
     return self;
 }
 #endif
+
+- (id) initWithFileURL:(NSURL *)fileURL arguments:(NSDictionary *)args completion:(FKAPIImageUploadCompletion)completion {
+    self = [super init];
+    if (self) {
+        self.image = nil;
+        self.fileURL = fileURL;
+        self.args = args;
+        self.completion = completion;
+    }
+    return self;
+}
+
 
 #pragma mark - DUOperation methods
 
@@ -99,8 +113,35 @@
 	// Form multipart needs a boundary 
 	NSString *multipartBoundary = FKGenerateUUID();
 	
+    NSString *inFilename = nil;
+   
+    NSInputStream *inInputStream = nil;
+   	// Input stream is the image
+    if (self.image) {
+        NSData *jpegData = [FKImageUploadNetworkOperation jpegSerialzation:self.image];
+        inInputStream = [[NSInputStream alloc] initWithData:jpegData];
+        inFilename = [self.args valueForKey:@"title"];
+    // Input stream is the asset
+    } else if( self.assetURL ) {
+        inFilename = [self.args valueForKey:@"title"];
+    // Input stream is the file
+    } else if (self.fileURL) {
+        inInputStream = [[NSInputStream alloc] initWithURL:self.fileURL];
+        inFilename = [self.fileURL lastPathComponent];
+    }
+    
+    // Attempt to determine the MIME type from the path extension
+    NSString *pathExtension = [inFilename pathExtension];
+    NSString *mimeType = nil;
+    if (pathExtension) {
+        CFStringRef UTI = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef) pathExtension, NULL);
+        mimeType = (__bridge NSString *) UTTypeCopyPreferredTagWithClass (UTI, kUTTagClassMIMEType);
+        CFRelease(UTI);
+    }
+    if (nil == mimeType)
+        mimeType = @"image/jpeg";
+    
 	// File name
-	NSString *inFilename = [self.args valueForKey:@"title"];
 	if (!inFilename) {
         inFilename = @" "; // Leave space so that the below still uploads a file
     } else {
@@ -113,7 +154,7 @@
 		[multipartOpeningString appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"%@\"\r\n\r\n%@\r\n", multipartBoundary, key, [args valueForKey:key]];
 	}
     [multipartOpeningString appendFormat:@"--%@\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"%@\"\r\n", multipartBoundary, inFilename];
-    [multipartOpeningString appendFormat:@"Content-Type: %@\r\n\r\n", @"image/jpeg"];
+    [multipartOpeningString appendFormat:@"Content-Type: %@\r\n\r\n", mimeType];
 	
 	// The multipart closing string
 	NSMutableString *multipartClosingString = [NSMutableString string];
@@ -127,12 +168,9 @@
     NSOutputStream *outputStream = [NSOutputStream outputStreamToFileAtPath:tempFileName append:NO];
     [outputStream open];
     
-    if( self.image ){
-        NSData *jpegData = [FKImageUploadNetworkOperation jpegSerialzation:self.image];
-        // Input stream is the image
-        NSInputStream *inImageStream = [[NSInputStream alloc] initWithData:jpegData];
+    if( self.image || self.fileURL) {
         // Write the contents to the streams... don't cross the streams !
-        [FKDUStreamUtil writeMultipartStartString:multipartOpeningString imageStream:inImageStream toOutputStream:outputStream closingString:multipartClosingString];
+        [FKDUStreamUtil writeMultipartStartString:multipartOpeningString imageStream:inInputStream toOutputStream:outputStream closingString:multipartClosingString];
     }
 #if TARGET_OS_IOS
     else if( self.assetURL ){

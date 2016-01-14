@@ -159,5 +159,7 @@ FOUNDATION_EXPORT const unsigned char FlickrKitVersionString[];
 - (FKImageUploadNetworkOperation *) uploadAssetURL:(NSURL *)assetURL args:(NSDictionary *)args completion:(FKAPIImageUploadCompletion)completion;
 #endif
 
+- (FKImageUploadNetworkOperation *) uploadAtFileURL:(NSURL *)fileURL args:(NSDictionary *)args completion:(FKAPIImageUploadCompletion)completion;
+
 @end
 
