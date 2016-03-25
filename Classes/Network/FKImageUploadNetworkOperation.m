@@ -237,6 +237,7 @@
 				self.completion(response.photoID, response.error);
 			}
 		}
+		[self finish];
 		
 	});
 }
